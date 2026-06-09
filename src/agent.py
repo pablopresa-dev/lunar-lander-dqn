@@ -1,5 +1,6 @@
 import torch
 import random
+import numpy as np
 import torch.optim as optim
 from src.model import QNetwork
 from src.buffer import ReplayBuffer
@@ -63,9 +64,29 @@ class DQNAgent:
             return torch.argmax(q_values).item()
         
     def learn(self, batch_size):
-        """
-        Sample a mini-batch of experiences from memory and optimize the brain's weights.
-        Temporarily left placeholder (pass) for iterative architectural building.
-        """
-        pass
         
+        """
+        Sample a mini-batch of experiences from memory and optimize the brain's weights
+        by minimizing the difference between predicted and target Q-values.
+        
+        Inputs:
+            batch_size (int): Number of experiences to sample and process in this step
+        """
+        # 1. Extract a random mini-batch of structured experiences from the replay buffer
+        experiences = self.replay_buffer.sample(batch_size)
+        
+        # 2. Extract and stack current states into a 2D float tensor (shape: batch_size x 8)
+        states = torch.from_numpy(np.vstack([e.state for e in experiences if e is not None])).float()
+        
+        # 3. Extract actions and convert them into a 2D long (integer) tensor (shape: batch_size x 1)
+        # We use .long() because action indices (0, 1, 2, 3) are used as matrix indexes in PyTorch
+        actions = torch.from_numpy(np.vstack([e.action for e in experiences if e is not None])).long()
+        
+        # 4. Extract rewards and convert them into a 2D float tensor (shape: batch_size x 1)
+        rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float()
+        
+        # 5. Extract next states and convert them into a 2D float tensor (shape: batch_size x 8)
+        next_states = torch.from_numpy(np.vstack([e.next_states for e in experiences if e is not None])).float()
+        
+        # 6. Extract termination flags (dones) and convert True/False to 1.0/0.0 float tensor (shape: batch_size x 1)
+        dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None])).float()
