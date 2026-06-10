@@ -1,4 +1,4 @@
-import gymnasium as np
+import gymnasium as gym
 import numpy as np
 import torch
 import time
@@ -11,7 +11,7 @@ def train():
     """
     # 1. Initialize environment (render_mode = None trains at warp speed without graphics)
     # Change to "human" later if wanted to watch the agent play
-    env = gymnasium.make("LunarLander-v3", render_mode = None)  
+    env = gym.make("LunarLander-v3", render_mode = None)  
     
     # 2. Extract environment geometry dimensions
     state_size = env.observation_space.shape[0] # Should be 8 parameters
