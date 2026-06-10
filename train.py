@@ -55,8 +55,13 @@ def train():
             # Trigger the learning process once the buffer has enough samples
             if len(agent.replay_buffer) > batch_size:
                 agent.learn(batch_size)
-            
+                
+        # 5. Print progress at the end of each training episode
+        print(f"Episode {episode} - Total Reward: {total_reward:.2f} - Epsilon: {agent.epsilon:.3f}")
         
-            
+        # 6. Decay epsilon to reduce exploration over time
+        if agent.epsilon > agent.epsilon_min:
+            agent.epsilon *= agent.epsilon_decay
+        
 if __name__ == "__main__":
     train()
