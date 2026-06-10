@@ -24,7 +24,7 @@ class DQNAgent:
         self.brain = QNetwork(state_size, action_size)
         
         # Initialize the replay memory structure to store past experiences
-        self.ReplayBuffer = ReplayBuffer(memory_size)
+        self.replay_buffer = ReplayBuffer(memory_size)
         
         # Initialize the Adam optimizer to adjust network weights based on learning errors
         # 'lr' represents the learning rate (how fast the agent modifies its weights)
@@ -90,3 +90,28 @@ class DQNAgent:
         
         # 6. Extract termination flags (dones) and convert True/False to 1.0/0.0 float tensor (shape: batch_size x 1)
         dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None])).float()
+        
+        # 7. Pass current states through the network to get Q-values for all actions
+        # Then, gather only the Q-values corresponding to the actions actually taken
+        current_q_values = self.brain(states).gather(1, actions)
+        
+        # 8. Predict the maximum Q-values for the next states using the same network
+        max_next_q_values = self.brain(next_states).detach().max(1)[0].unsqueeze(1)
+        
+        # 9. Compute the target Q-values using the Bellman Equation
+        # gamma (0.99) discounts future rewards; if done is True (1.0), future rewards are zeroed out
+        gamma = 0.99
+        target_q_values = rewards + (gamma * max_next_q_values * (1- dones))
+        
+        # 10. Compute the Mean Squared Error (MSE) loss between current and target Q-values
+        loss = torch.nn.functional.mse_loss(current_q_values, target_q_values)
+        
+        # 11. Reset the gradients to zero so they don't accumulate from previous steps
+        self.optimizer.zero_grad()
+        
+        # 12. Perform backpropagation to calculate the gradients of the loss
+        loss.backward()
+        
+        # 13. Update the neural network weights using the Adam optimizer
+        self.optimizer.step()
+        
