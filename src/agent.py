@@ -85,8 +85,8 @@ class DQNAgent:
         # 4. Extract rewards and convert them into a 2D float tensor (shape: batch_size x 1)
         rewards = torch.from_numpy(np.vstack([e.reward for e in experiences if e is not None])).float()
         
-        # 5. Extract next states and convert them into a 2D float tensor (shape: batch_size x 8)
-        next_states = torch.from_numpy(np.vstack([e.next_states for e in experiences if e is not None])).float()
+        # 5. Extract next state and convert them into a 2D float tensor (shape: batch_size x 8)
+        next_state = torch.from_numpy(np.vstack([e.next_state for e in experiences if e is not None])).float()
         
         # 6. Extract termination flags (dones) and convert True/False to 1.0/0.0 float tensor (shape: batch_size x 1)
         dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None])).float()
@@ -95,8 +95,8 @@ class DQNAgent:
         # Then, gather only the Q-values corresponding to the actions actually taken
         current_q_values = self.brain(states).gather(1, actions)
         
-        # 8. Predict the maximum Q-values for the next states using the same network
-        max_next_q_values = self.brain(next_states).detach().max(1)[0].unsqueeze(1)
+        # 8. Predict the maximum Q-values for the next state using the same network
+        max_next_q_values = self.brain(next_state).detach().max(1)[0].unsqueeze(1)
         
         # 9. Compute the target Q-values using the Bellman Equation
         # gamma (0.99) discounts future rewards; if done is True (1.0), future rewards are zeroed out
