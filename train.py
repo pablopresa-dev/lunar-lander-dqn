@@ -3,6 +3,9 @@ import numpy as np
 import torch
 import time
 from src.agent import DQNAgent
+import os
+import csv
+import matplotlib.pyplot as plt
 
 def train():
     """
@@ -23,6 +26,9 @@ def train():
     # 4. Define training hyperparameters
     n_episodes = 2000   # Maximum number of games to play
     batch_size = 64     # Size of the memory mini-batches for learning
+    
+    # Track evaluation metrics throughout training episodes
+    scores_history = [] # List to store total rewards per episode
     
     print("Initializing training... The Lunar Lander is ready on the launchpad.")
     
@@ -59,6 +65,9 @@ def train():
         # 5. Print progress at the end of each training episode
         print(f"Episode {episode} - Total Reward: {total_reward:.2f} - Epsilon: {agent.epsilon:.3f}")
         
+        # Append reward to history for post-training metrics execution
+        scores_history.append(total_reward) # Store the final reward of the episode
+        
         # 6. Decay epsilon to reduce exploration over time
         if agent.epsilon > agent.epsilon_min:
             agent.epsilon *= agent.epsilon_decay
@@ -66,6 +75,52 @@ def train():
     # 7. Save the primary network's weights to disk
     torch.save(agent.brain.state_dict(), "lunar_lander_dqn.pth")
     print("Training complete! Optimal weights saved successfully to  'lunar_lander_dqn.pth'.")
+    
+    # 8. Export analytics files automatically
+    save_training_metrics(scores_history) # Call the metric logging function here
+        
+# After training completes, assume 'scores_history' is your list of rewards per episode
+def save_training_metrics(scores, output_dir="metrics"):
+    """
+    Logs training scores to a CSV file and exports a professional evaluation plot.
+    """
+    # Create metrics directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+    csv_path = os.path.join(output_dir, "training_scores.csv")
+    plot_path = os.path.join(output_dir, "learning_curve.png")
+    
+    # 1. Save evaluation metrics to a clean CSV file
+    print(f"Saving training metrics to {csv_path}...")
+    with open(csv_path, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Episode", "Reward"])
+        for episode, reward in enumerate(scores, start=1):
+            writer.writerow([episode, reward])
+            
+    # 2. Generate a professional learning curve plot
+    print(f"Generating learning curve plot at {plot_path}...")
+    plt.style.use("seaborn-v0_8-whitegrid")  # Clean corporate plotting style
+    plt.figure(figsize=(10, 5))
+    
+    # Plot raw episode rewards with lower alpha for visual clarity
+    plt.plot(scores, color="#1f77b4", alpha=0.3, label="Raw Episode Reward")
+    
+    # Calculate and plot a moving average (e.g., window of 50 episodes) to show convergence
+    if len(scores) >= 50:
+        import numpy as np
+        moving_avg = np.convolve(scores, np.ones(50)/50, mode="valid")
+        plt.plot(range(50, len(scores) + 1), moving_avg, color="#d62728", linewidth=2, label="50-Episode Moving Avg")
+        
+    plt.title("DQN Autonomous Pilot - LunarLander-v3 Training Convergence", fontsize=14, fontweight="bold", pad=15)
+    plt.xlabel("Training Episodes", fontsize=12)
+    plt.ylabel("Total Reward Score", fontsize=12)
+    plt.axhline(y=200, color="#2ca02c", linestyle="--", linewidth=1.5, label="Environment Solved Threshold (+200)")
+    plt.legend(loc="upper left", frameon=True, facecolor="white", edgecolor="none")
+    plt.tight_layout()
+    
+    # Save chart with high DPI resolution for publication quality
+    plt.savefig(plot_path, dpi=300)
+    plt.close()
         
 if __name__ == "__main__":
     train()
