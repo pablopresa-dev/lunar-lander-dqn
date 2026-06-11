@@ -3,6 +3,7 @@ import gymnasium as gym
 from gymnasium.wrappers import RecordVideo
 import torch
 import numpy as np
+import time
 import os
 import shutil
 from src.agent import DQNAgent
@@ -55,35 +56,40 @@ if start_simulation:
     done = False
     total_reward = 0
     
-    # Status status placeholder during processing
-    status_placeholder = st.empty()
-    status_placeholder.info("🚀 Spacecraft has detached. Running neural network simulation in the background...")
+    # Create a clean visual spinner for the background calculation phase
+    with st.spinner("🛸 Autopilot is computing the optimal flight path... Please wait."):
+        live_reward_placeholder = st.empty()
     
-    while not done:
-        # Agent selects the optimal action greedily
-        chosen_action = agent.act(state)
-        
-        # Step the environment (frames are captured automatically by the wrapper)
-        next_state, reward, terminated, truncated, info = env.step(chosen_action)
-        
-        if terminated or truncated:
-            done = True
+        while not done:
+            # Agent selects the optimal action greedily
+            chosen_action = agent.act(state)
             
-        state = next_state
-        total_reward += reward
-        
+            # Step the environment (frames are captured automatically by the wrapper)
+            next_state, reward, terminated, truncated, info = env.step(chosen_action)
+            
+            if terminated or truncated:
+                done = True
+                
+            state = next_state
+            total_reward += reward
+            
+            # Clean text-only update during computation (avoids video placeholder glitch)
+            live_reward_placeholder.markdown(f"**Current Telemetry Reward:** `{total_reward:.2f}`")
+            time.sleep(0.005) # Hyper-fast update for fluid backend processing
     # Close the environment and finalize the video encoding
     env.close()
     base_env.close()
     
-    # Update status and display the native HTML5 video player
-    status_placeholder.empty()
-    st.success(f"Flight complete! Final Evaluation Reward: {total_reward:.2f}")
+    # 1. Clear the temporary text tracker once the real video is ready
+    live_reward_placeholder.empty()    
     
-    # Streamlit renders the generated MP4 file smoothly at 60 FPS
+    # 2. Get the video path and verify it exists
     video_file_path = os.path.join(video_dir, "rl-video-episode-0.mp4")
     if os.path.exists(video_file_path):
+        # 3. Render the clean video player first so it starts playing immediately (60 FPS)
         st.video(video_file_path, autoplay=True)
-        st.balloons()
+        
+        # 4. Display the final score banner at the bottom as a closing summary
+        st.success(f"🎯 Flight complete! Final Evaluation Reward: {total_reward:.2f}")
     else:
         st.error("Error: Video file could not be generated.")
