@@ -1,8 +1,10 @@
 import streamlit as st
 import gymnasium as gym
+from gymnasium.wrappers import RecordVideo
 import torch
 import numpy as np
-import time
+import os
+import shutil
 from src.agent import DQNAgent
 
 # 1. Page layout and styling configuration
@@ -36,23 +38,32 @@ except Exception as e:
 st.subheader("Simulation Control Panel")
 start_simulation = st.button("Launch Evaluation Flight")
 
-# 4. Main simulation and web rendering loop
+# 4. Main simulation, video recording and playback loop
 if start_simulation:
-    # Initialize environment in rgb_array mode to capture frames as matrices
-    env = gym.make("LunarLander-v3", render_mode="rgb_array")
+    # Clean up any existing video directories from previous runs
+    video_dir = "./videos"
+    if os.path.exists(video_dir):
+        shutil.rmtree(video_dir)
+        
+    # Initialize environment in rgb_array mode to enable pixel rendering for recording
+    base_env = gym.make("LunarLander-v3", render_mode="rgb_array")
+    
+    # Wrap the environment to automatically save the flight as an MP4 file
+    env = RecordVideo(base_env, video_folder=video_dir, episode_trigger=lambda e: True)
+    
     state, info = env.reset()
     done = False
     total_reward = 0
     
-    # Placeholders for dynamic rendering
-    frame_placeholder = st.empty()
+    # Status status placeholder during processing
     status_placeholder = st.empty()
+    status_placeholder.info("🚀 Spacecraft has detached. Running neural network simulation in the background...")
     
     while not done:
         # Agent selects the optimal action greedily
         chosen_action = agent.act(state)
         
-        # Step the environment
+        # Step the environment (frames are captured automatically by the wrapper)
         next_state, reward, terminated, truncated, info = env.step(chosen_action)
         
         if terminated or truncated:
@@ -61,16 +72,18 @@ if start_simulation:
         state = next_state
         total_reward += reward
         
-        # Capture current simulation frame matrix
-        current_frame = env.render()
-        
-        # Render frame matrix directly onto the web interface
-        frame_placeholder.image(current_frame, channels="RGB", use_container_width=True)
-        status_placeholder.metric(label="Current Accumulated Reward", value=f"{total_reward:.2f}")
-        
-        # Frame pacing delay
-        time.sleep(0.005)
-        
+    # Close the environment and finalize the video encoding
     env.close()
-    st.balloons()
+    base_env.close()
+    
+    # Update status and display the native HTML5 video player
+    status_placeholder.empty()
     st.success(f"Flight complete! Final Evaluation Reward: {total_reward:.2f}")
+    
+    # Streamlit renders the generated MP4 file smoothly at 60 FPS
+    video_file_path = os.path.join(video_dir, "rl-video-episode-0.mp4")
+    if os.path.exists(video_file_path):
+        st.video(video_file_path, autoplay=True)
+        st.balloons()
+    else:
+        st.error("Error: Video file could not be generated.")
