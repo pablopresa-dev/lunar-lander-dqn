@@ -62,6 +62,10 @@ def train():
         # 6. Decay epsilon to reduce exploration over time
         if agent.epsilon > agent.epsilon_min:
             agent.epsilon *= agent.epsilon_decay
+            
+    # 7. Save the primary network's weights to disk
+    torch.save(agent.brain.state_dict(), "lunar_lander_dqn.pth")
+    print("Training complete! Optimal weights saved successfully to  'lunar_lander_dqn.pth'.")
         
 if __name__ == "__main__":
     train()
