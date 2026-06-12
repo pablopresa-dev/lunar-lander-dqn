@@ -115,11 +115,11 @@ def save_training_metrics(scores, output_dir="metrics"):
     plt.xlabel("Training Episodes", fontsize=12)
     plt.ylabel("Total Reward Score", fontsize=12)
     plt.axhline(y=200, color="#2ca02c", linestyle="--", linewidth=1.5, label="Environment Solved Threshold (+200)")
-    plt.legend(loc="upper left", frameon=True, facecolor="white", edgecolor="none")
-    plt.tight_layout()
+    
+    plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), frameon=True, facecolor="white", edgecolor="none", ncol=3)
     
     # Save chart with high DPI resolution for publication quality
-    plt.savefig(plot_path, dpi=300)
+    plt.savefig(plot_path, dpi=300, bbox_inches="tight")
     plt.close()
         
 if __name__ == "__main__":
