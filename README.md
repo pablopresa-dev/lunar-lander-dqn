@@ -27,6 +27,10 @@ The reinforcement learning pipeline leverages a classic **Deep Q-Network (DQN)**
 * **Training Optimization:** The agent was trained for 2,000 computational episodes using vectorized execution with graphics disabled (`render_mode=None`) for maximum training throughput.
 * **Autonomous Efficiency:** The network successfully solves the environment by consistently achieving steady positive scores, peaking at evaluation rewards over **+250 points**.
 
+<p align="center">
+  <img src="metrics/learning_curve.png" alt="DQN Training Convergence Curve" width="750"/>
+</p>
+
 ---
 
 ## 🛠️ Installation & Local Usage
